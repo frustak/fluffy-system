@@ -1,0 +1,155 @@
+---
+import { ViewTransitions } from "astro:transitions";
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro</title>
+		<ViewTransitions />
+	</head>
+	<body>
+		<main>
+			<div>
+				<slot></slot>
+			</div>
+		</main>
+		<div id="loading" transition:persist>
+			<h1>
+				P
+			</h1>
+		</div>
+	</body>
+</html>
+
+<script>
+import { swapFunctions } from 'astro:transitions/client';
+import { gsap } from 'gsap';
+
+const tl = gsap.timeline({
+		defaults: {
+			duration: 1,
+			ease: 'power2.inOut'
+		}
+	  })
+
+document.addEventListener('astro:before-preparation', event => {
+    const originalLoader = event.loader;
+    event.loader = async () => {
+	  tl.to('#loading', {
+		autoAlpha: 1,
+	  })
+	  tl.fromTo('#loading > h1', 
+	  { 
+		rotate: '-75deg',
+		fontSize: '200vw',
+	  },
+	  {
+		rotate: '0deg',
+		fontSize: '25vw',
+	  }, '-=1')
+	  await originalLoader();
+	  stop();
+    };
+});
+
+document.addEventListener('astro:before-swap', event => {
+    event.swap = () => mySwap(event.newDocument);
+});
+
+function mySwap(doc: Document) {
+  swapFunctions.deselectScripts(doc);
+  swapFunctions.swapRootAttributes(doc);
+  swapFunctions.swapHeadElements(doc);
+  const restoreFocusFunction = swapFunctions.saveFocus();
+  tl.to('#loading > h1', 
+	  {
+		rotate: '50deg',
+		fontSize: '200vw',
+	  })
+	  tl.to('#loading', {
+		autoAlpha: 0,
+		onStart: () => {
+			swapFunctions.swapBodyElement(doc.body, document.body);
+			restoreFocusFunction();
+		}
+	  }, '-=1')
+	  
+};
+</script>
+
+
+<style is:global>
+#loading {
+	position: fixed;
+	inset: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	width: 100vw;
+	background-color: #F4F1DE;
+	opacity: 0;
+	visibility: hidden;
+	cursor: default;
+}
+
+#loading > h1 {
+	font-size: 25vw;
+	font-weight: 900;
+	color: #3D405B;
+	rotate: 45deg;
+
+}
+	
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+* {
+  margin: 0;
+}
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+input, button, textarea, select {
+  font: inherit;
+}
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+}
+#root, #__next {
+  isolation: isolate;
+}
+	
+body {
+	font-family: monospace;
+	margin: 0;
+	background-color: #3D405B;
+	color: #F4F1DE;
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+	font-size: 2rem;
+}
+
+main {
+	height: 100vh;
+	padding: 2rem;
+	max-width: 60rem;
+	margin: auto;
+}
+
+h1 {
+	font-size: 5rem;
+}
+</style>
